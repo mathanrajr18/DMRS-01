@@ -1,0 +1,685 @@
+/* ==========================================================================
+   DMRS-01 3D CUBESAT & MPU6050 ATTITUDE STYLESHEET
+   Professional Dark Aerospace Ground Station Interface
+   ========================================================================== */
+
+.cubesat-page {
+  min-height: 100vh;
+  background-color: #040711;
+  color: #f8fafc;
+  padding: 5.5rem 1.5rem 4rem 1.5rem;
+  position: relative;
+}
+
+.cubesat-container {
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+/* Header Bar */
+.cubesat-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.back-btn {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #cbd5e1;
+  padding: 0.4rem 0.95rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateX(-2px);
+}
+
+/* Title Block */
+.cubesat-title-block {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: clamp(2rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #f8fafc;
+  margin: 0 0 0.4rem 0;
+}
+
+.page-subtitle {
+  font-size: 1rem;
+  color: #94a3b8;
+  margin: 0;
+  max-width: 780px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   MAIN 3D GRID: 3D VIEWPORT + ATTITUDE / GYROSCOPE PANEL
+   ========================================================================== */
+.main-3d-grid {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 1.75rem;
+  margin-bottom: 2.75rem;
+  align-items: stretch;
+}
+
+/* WebGL Viewport Wrapper */
+.webgl-viewport-wrapper {
+  background: rgba(7, 12, 24, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+}
+
+.three-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  background: radial-gradient(circle at center, rgba(14, 165, 233, 0.08) 0%, rgba(4, 7, 17, 0.95) 75%);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.three-canvas-container:active {
+  cursor: grabbing;
+}
+
+.three-canvas-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* HUD Corner Reticles */
+.hud-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: #38bdf8;
+  border-style: solid;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.top-left {
+  top: 8px;
+  left: 8px;
+  border-width: 2px 0 0 2px;
+}
+
+.top-right {
+  top: 8px;
+  right: 8px;
+  border-width: 2px 2px 0 0;
+}
+
+.bottom-left {
+  bottom: 8px;
+  left: 8px;
+  border-width: 0 0 2px 2px;
+}
+
+.bottom-right {
+  bottom: 8px;
+  right: 8px;
+  border-width: 0 2px 2px 0;
+}
+
+.viewport-overlay-tag {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(6, 11, 24, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #38bdf8;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.tag-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #00e5ff;
+  box-shadow: 0 0 8px #00e5ff;
+}
+
+.drag-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  background: rgba(6, 11, 24, 0.75);
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* Viewport Controls Bar */
+.viewport-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toolbar-btn {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  color: #cbd5e1;
+  padding: 0.45rem 0.85rem;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.toolbar-btn.btn-active {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: #38bdf8;
+  color: #00e5ff;
+}
+
+.zoom-btn {
+  width: 30px;
+  height: 30px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #cbd5e1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.zoom-btn:hover {
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.zoom-display {
+  font-size: 0.72rem;
+  font-family: monospace;
+  color: #94a3b8;
+  min-width: 42px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   ATTITUDE / GYROSCOPE PANEL
+   ========================================================================== */
+.gyro-attitude-panel {
+  background: rgba(7, 12, 24, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 12px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+}
+
+.panel-top-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #38bdf8;
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+.mini-beacon {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.dot-green {
+  background-color: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.gyro-heading {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 0.35rem 0;
+}
+
+.gyro-intro {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0 0 1.5rem 0;
+}
+
+/* X, Y, Z Sliders & Readouts */
+.gyro-metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  margin-bottom: 1.75rem;
+}
+
+.gyro-axis-row {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+
+.axis-title-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.axis-indicator {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.red-axis {
+  color: #f87171;
+}
+
+.green-axis {
+  color: #4ade80;
+}
+
+.blue-axis {
+  color: #38bdf8;
+}
+
+.axis-angle-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-family: monospace;
+}
+
+.gyro-slider {
+  width: 100%;
+  height: 5px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1e293b;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.gyro-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #00e5ff;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.gyro-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* 3D XYZ Axis Indicator Box */
+.gimbal-indicator-box {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.gimbal-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.axis-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.legend-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+.axis-bar {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.red-bg {
+  background-color: #ef4444;
+  box-shadow: 0 0 6px #ef4444;
+}
+
+.green-bg {
+  background-color: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.blue-bg {
+  background-color: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+.pipeline-ready-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: #64748b;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pipe-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #38bdf8;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   LIVE TELEMETRY SECTION (BELOW 3D CUBESAT)
+   ========================================================================== */
+.cubesat-telemetry-section {
+  margin-top: 1rem;
+}
+
+.telemetry-section-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.section-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.telemetry-section-heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.telemetry-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sim-telemetry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #38bdf8;
+}
+
+.pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #00e5ff;
+  box-shadow: 0 0 6px #00e5ff;
+}
+
+.telemetry-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.telemetry-card {
+  background: rgba(8, 14, 28, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 8px;
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(6px);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.telemetry-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.card-status-ok {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.03);
+}
+
+.t-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.55rem;
+}
+
+.t-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.t-chip {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.1);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.tag-green {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.t-metric {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 0.65rem;
+  letter-spacing: -0.01em;
+}
+
+/* Mini sparkline indicator */
+.t-mini-graph {
+  width: 100%;
+  height: 4px;
+  background: #1e293b;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.55rem;
+}
+
+.sparkline-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.bar-cyan {
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+.bar-yellow {
+  background: #facc15;
+  box-shadow: 0 0 6px #facc15;
+}
+
+.bar-green {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.t-subtext {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Utility Colors */
+.text-yellow {
+  color: #facc15 !important;
+}
+
+.text-green {
+  color: #4ade80 !important;
+}
+
+.text-cyan {
+  color: #38bdf8 !important;
+}
+
+.text-red {
+  color: #f87171 !important;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+@media (max-width: 1080px) {
+  .main-3d-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .three-canvas-container {
+    height: 420px;
+  }
+}
+
+@media (max-width: 640px) {
+  .cubesat-page {
+    padding-top: 5rem;
+  }
+
+  .three-canvas-container {
+    height: 340px;
+  }
+
+  .telemetry-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .telemetry-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

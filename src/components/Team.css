@@ -1,0 +1,790 @@
+/* ==========================================================================
+   DMRS-01 TEAM PAGE STYLES
+   Professional Electronics & Aerospace-Inspired Clean Design
+   Theme: Clean White/Light-Gray, Navy Typography, Professional Blue Accents
+   ========================================================================== */
+
+.team-page {
+  position: relative;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+  padding-top: 5.5rem;
+  padding-bottom: 5rem;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Background PCB Traces Pattern */
+.team-pcb-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+}
+
+.pcb-circuit-svg {
+  display: block;
+}
+
+/* Page Container */
+.team-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+/* ==========================================================================
+   1. HERO / HEADER SECTION
+   ========================================================================== */
+
+.team-hero-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 2.75rem 3rem;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.team-hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb 0%, #38bdf8 50%, #2563eb 100%);
+}
+
+.team-hero-content {
+  flex: 1;
+  max-width: 650px;
+}
+
+.team-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.85rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 9999px;
+  margin-bottom: 1rem;
+}
+
+.label-indicator-dot {
+  width: 7px;
+  height: 7px;
+  background-color: #2563eb;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.team-small-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #1d4ed8;
+  text-transform: uppercase;
+}
+
+.team-main-heading {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem 0;
+}
+
+.team-hero-desc {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0 0 1.5rem 0;
+}
+
+.team-keywords-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.6rem 1.25rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #1e293b;
+}
+
+.keyword-separator {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* Hero Right Side: Subtle IC Chip Graphic */
+.team-hero-chip-graphic {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 280px;
+  height: 180px;
+}
+
+.chip-traces-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chip-package {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 6px 14px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+  border: 1px solid #334155;
+}
+
+.chip-pins {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.chip-pin {
+  width: 6px;
+  height: 8px;
+  background: #94a3b8;
+  border-radius: 1px;
+}
+
+.chip-body {
+  position: relative;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  text-align: center;
+  min-width: 170px;
+}
+
+.chip-notch {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 6px;
+  background: #0f172a;
+  border-radius: 0 0 6px 6px;
+  border: 1px solid #475569;
+  border-top: none;
+}
+
+.chip-brand {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #38bdf8;
+  margin-bottom: 0.2rem;
+}
+
+.chip-sub {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 0.6rem;
+}
+
+.chip-bus-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.bus-dot {
+  width: 5px;
+  height: 5px;
+  background-color: #10b981;
+  border-radius: 50%;
+}
+
+.bus-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #34d399;
+}
+
+.chip-specs-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  font-size: 0.6rem;
+  color: #64748b;
+  font-family: monospace;
+}
+
+/* ==========================================================================
+   2. TEAM MEMBERS SECTION (EXACTLY 3 CARDS IN ONE ROW)
+   ========================================================================== */
+
+.team-members-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-header-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.section-sub-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #2563eb;
+  text-transform: uppercase;
+}
+
+.section-title-compact {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* 3 Profile Cards in exactly 1 row on desktop */
+.team-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.75rem;
+}
+
+.team-member-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.75rem 1.5rem 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.team-member-card:hover {
+  transform: translateY(-4px);
+  border-color: #93c5fd;
+  box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.08);
+}
+
+.card-top-circuit {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.callsign-tag {
+  font-family: monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #dbeafe;
+}
+
+.dept-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+/* Neatly Framed Portrait (Moderate Size) */
+.member-portrait-frame {
+  position: relative;
+  width: 140px;
+  height: 180px;
+  border-radius: 10px;
+  padding: 4px;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.25rem;
+}
+
+.member-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 15%;
+  border-radius: 6px;
+  display: block;
+}
+
+/* Technical Corner Brackets */
+.portrait-corner-brackets .corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: #2563eb;
+  border-style: solid;
+  pointer-events: none;
+}
+
+.portrait-corner-brackets .top-left {
+  top: -2px;
+  left: -2px;
+  border-width: 2px 0 0 2px;
+}
+
+.portrait-corner-brackets .top-right {
+  top: -2px;
+  right: -2px;
+  border-width: 2px 2px 0 0;
+}
+
+.portrait-corner-brackets .bottom-left {
+  bottom: -2px;
+  left: -2px;
+  border-width: 0 0 2px 2px;
+}
+
+.portrait-corner-brackets .bottom-right {
+  bottom: -2px;
+  right: -2px;
+  border-width: 0 2px 2px 0;
+}
+
+.member-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.member-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.member-year-badge {
+  margin: 0.15rem 0;
+}
+
+.year-pill {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #eff6ff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #dbeafe;
+}
+
+.member-college {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0.15rem 0;
+  text-align: center;
+}
+
+.college-mini-icon {
+  width: 14px;
+  height: 14px;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.member-project {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+}
+
+.cubesat-mini-icon {
+  width: 13px;
+  height: 13px;
+  color: #3b82f6;
+}
+
+.card-bottom-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #10b981;
+  border-radius: 50%;
+}
+
+.status-text {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #059669;
+}
+
+/* ==========================================================================
+   3. OUR MISSION SECTION (WORKFLOW)
+   ========================================================================== */
+
+.team-mission-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 2.5rem 2.5rem;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+}
+
+.mission-section-header {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 2.25rem auto;
+}
+
+.mission-main-text {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  margin: 0.35rem 0 0.6rem 0;
+}
+
+.mission-short-desc {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #475569;
+  margin: 0;
+}
+
+.workflow-container {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.workflow-steps-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 680px;
+  padding: 0 1rem;
+}
+
+.workflow-step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+}
+
+.workflow-icon-bubble {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.workflow-step-node:hover .workflow-icon-bubble {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.workflow-icon-bubble svg {
+  width: 24px;
+  height: 24px;
+}
+
+.workflow-step-label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+}
+
+.workflow-step-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  max-width: 130px;
+  line-height: 1.3;
+}
+
+.workflow-arrow-connector {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.connector-circuit-line {
+  width: 36px;
+  height: 2px;
+  background: #cbd5e1;
+  position: relative;
+}
+
+.connector-circuit-line::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+.arrow-head-svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ==========================================================================
+   4. TEAM VALUES SECTION
+   ========================================================================== */
+
+.team-values-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.value-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 2px 10px -2px rgba(15, 23, 42, 0.03);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.value-card:hover {
+  transform: translateY(-2px);
+  border-color: #bfdbfe;
+  box-shadow: 0 8px 18px -3px rgba(37, 99, 235, 0.06);
+}
+
+.value-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.value-icon-box svg {
+  width: 22px;
+  height: 22px;
+}
+
+.value-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.value-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #0f172a;
+  margin: 0;
+}
+
+.value-desc {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #475569;
+  margin: 0;
+}
+
+/* ==========================================================================
+   5. FOOTER BANNER
+   ========================================================================== */
+
+.team-footer-banner {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.03);
+}
+
+.banner-text-center {
+  text-align: center;
+}
+
+.banner-project-name {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #2563eb;
+  margin-bottom: 0.2rem;
+}
+
+.banner-project-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #0f172a;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.banner-tagline {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.banner-circuit-accent {
+  opacity: 0.8;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .team-cards-grid {
+    gap: 1.25rem;
+  }
+  .values-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .team-hero-section {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem 1.75rem;
+  }
+  .team-hero-chip-graphic {
+    align-self: center;
+    width: 100%;
+    max-width: 280px;
+  }
+  .team-cards-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .team-footer-banner {
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.75rem 1.5rem;
+  }
+  .banner-circuit-accent {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .team-main-heading {
+    font-size: 2rem;
+  }
+  .team-keywords-banner {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+}

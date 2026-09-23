@@ -1,0 +1,321 @@
+/* ==========================================================================
+   DMRS-01 AEROSPACE NAVBAR STYLES
+   Professional Dark Interface with Clean Spacing & Consistent Typography
+   ========================================================================== */
+
+.navbar-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(4, 7, 17, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.16);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar-scrolled {
+  background: rgba(4, 7, 17, 0.96);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), 0 0 15px rgba(2, 132, 199, 0.08);
+}
+
+.navbar-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Brand */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.navbar-brand:hover {
+  opacity: 0.9;
+}
+
+.brand-orbit-icon {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.orbit-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.5));
+  animation: slowOrbit 20s linear infinite;
+}
+
+@keyframes slowOrbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.brand-pulse {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #00e5ff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00e5ff;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-family: var(--font-heading, 'Space Grotesk', sans-serif);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f8fafc;
+  line-height: 1;
+}
+
+.brand-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #38bdf8;
+  margin-top: 0.2rem;
+  text-transform: uppercase;
+}
+
+/* Desktop Nav */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+}
+
+.nav-list {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.4rem, 0.9vw, 1.15rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item {
+  position: relative;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #94a3b8;
+  font-size: 0.86rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, #00e5ff, #38bdf8);
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
+  transition: transform 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.nav-link.active {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+/* Mission Control CTA Link */
+.nav-link.nav-cta {
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  color: #38bdf8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  transition: all 0.25s ease;
+}
+
+.nav-link.nav-cta::after {
+  display: none;
+}
+
+.nav-link.nav-cta:hover {
+  background: rgba(14, 165, 233, 0.25);
+  border-color: #00e5ff;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.cta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #00e5ff;
+  box-shadow: 0 0 6px #00e5ff;
+  animation: pulseCtaDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseCtaDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* Mobile Toggle */
+.mobile-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 32px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+}
+
+.mobile-toggle:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 4px;
+}
+
+.mobile-toggle .bar {
+  width: 100%;
+  height: 2.5px;
+  background-color: #cbd5e1;
+  border-radius: 2px;
+  transition: all 0.25s ease;
+}
+
+.mobile-toggle.open .bar:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.mobile-toggle.open .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-toggle.open .bar:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Mobile Dropdown Menu */
+.mobile-menu {
+  display: none;
+  background: rgba(5, 9, 20, 0.98);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 1.25rem 1.5rem 1.75rem 1.5rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.mobile-menu.open {
+  display: block;
+  animation: slideDownMobile 0.25s ease-out forwards;
+}
+
+@keyframes slideDownMobile {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-nav-link {
+  text-decoration: none;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: all 0.2s ease;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link.active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.2);
+}
+
+.mobile-nav-cta {
+  margin-top: 0.4rem;
+  background: rgba(14, 165, 233, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #00e5ff;
+  font-weight: 600;
+}
+
+/* Breakpoint for 9 nav items: switch to mobile menu at 1080px */
+@media (max-width: 1080px) {
+  .navbar-nav {
+    display: none;
+  }
+  .mobile-toggle {
+    display: flex;
+  }
+}
