@@ -73,6 +73,21 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #38bdf8;
+  transition: all 0.3s ease;
+}
+
+.mc-sim-badge.live-badge {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+}
+
+.mc-sim-badge.waiting-badge {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
 }
 
 .sim-pulse {
@@ -82,6 +97,16 @@
   background: #00e5ff;
   box-shadow: 0 0 8px #00e5ff;
   animation: pulseSim 2s infinite ease-in-out;
+}
+
+.sim-pulse.live-pulse {
+  background: #22c55e;
+  box-shadow: 0 0 10px #22c55e;
+}
+
+.sim-pulse.waiting-pulse {
+  background: #f59e0b;
+  box-shadow: 0 0 10px #f59e0b;
 }
 
 @keyframes pulseSim {

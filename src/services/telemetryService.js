@@ -25,7 +25,14 @@ export const INITIAL_TELEMETRY = {
   temperature: {
     value: 28.4,
     unit: '°C',
-    label: 'Temperature',
+    label: 'Temperature (DHT)',
+    sensor: 'DHT Sensor',
+    status: 'normal',
+  },
+  bmpTemperature: {
+    value: 28.1,
+    unit: '°C',
+    label: 'BMP Temperature',
     sensor: 'BMP180',
     status: 'normal',
   },
@@ -72,22 +79,25 @@ export const INITIAL_TELEMETRY = {
     status: 'normal',
   },
 
-  // Solar Tracking Subsystem
+  // Actuation & Solar Tracking Subsystem
   solarTracking: {
     status: 'ACTIVE',
     ldrLeft: '870 Lux',
     ldrRight: '845 Lux',
-    servoAngle: '42°',
+    leftLdrRaw: 870,
+    rightLdrRaw: 845,
+    mgAngle: '45°',
+    sgAngle: '90°',
+    servoAngle: '45°',
     mode: 'Closed-Loop Auto',
   },
 
   // Sensor Health Subsystem Statuses
   sensorStatus: [
+    { id: 'dht', name: 'DHT Sensor', label: 'Temperature & Humidity', status: 'NORMAL', state: 'normal' },
     { id: 'bmp180', name: 'BMP180', label: 'Temperature & Pressure', status: 'NORMAL', state: 'normal' },
-    { id: 'humidity', name: 'Humidity Sensor', label: 'Relative Humidity', status: 'NORMAL', state: 'normal' },
-    { id: 'mpu6050', name: 'MPU6050 Gyroscope', label: 'Attitude & Orientation', status: 'NORMAL', state: 'normal' },
-    { id: 'ldr', name: 'LDR Sensors', label: 'Sunlight Detection', status: 'NORMAL', state: 'normal' },
-    { id: 'solar', name: 'Solar Subsystem', label: 'Solar Tracking & Rails', status: 'ACTIVE', state: 'normal' },
+    { id: 'ldr', name: 'LDR Dual Array', label: 'Sunlight Tracking', status: 'ACTIVE', state: 'normal' },
+    { id: 'servos', name: 'MG90S / SG90S', label: 'Dual Axis Gimbal', status: 'ALIGNED', state: 'normal' },
     { id: 'esp32', name: 'ESP32 System Status', label: 'Main Flight Controller', status: 'ONLINE', state: 'normal' },
   ]
 };
@@ -168,3 +178,165 @@ export function generateInitialChartData(points = 12) {
     battery: d.battery,
   }));
 }
+
+/**
+ * Transform a single Supabase public.telemetry row into website telemetry format
+ */
+export function transformSupabaseRow(row) {
+  if (!row) return null;
+
+  const dhtTemp = row.dht_temp != null ? Number(row.dht_temp) : null;
+  const bmpTemp = row.bmp_temp != null ? Number(row.bmp_temp) : null;
+  const humidity = row.humidity != null ? Number(row.humidity) : null;
+  const pressure = row.pressure != null ? Number(row.pressure) : null;
+  const leftLdr = row.left_ldr != null ? Number(row.left_ldr) : null;
+  const rightLdr = row.right_ldr != null ? Number(row.right_ldr) : null;
+  const mgAngle = row.mg_angle != null ? Number(row.mg_angle) : null;
+  const sgAngle = row.sg_angle != null ? Number(row.sg_angle) : null;
+  const statusRaw = row.system_status ? String(row.system_status).trim().toUpperCase() : 'NORMAL';
+
+  let sunlightVal = 'Nominal';
+  if (leftLdr != null && rightLdr != null) {
+    const avgLux = Math.round((leftLdr + rightLdr) / 2);
+    sunlightVal = `${avgLux} Lux`;
+  } else if (leftLdr != null) {
+    sunlightVal = `${leftLdr} Lux`;
+  }
+
+  const estimatedVoltage = leftLdr != null
+    ? parseFloat(Math.min(6.5, Math.max(3.2, 3.2 + (leftLdr / 1000) * 2.8)).toFixed(2))
+    : 5.8;
+
+  return {
+    isLive: true,
+    isSimulated: false,
+    callsign: 'DMRS-01',
+    systemStatus: statusRaw,
+    lastUpdated: row.created_at || new Date().toISOString(),
+
+    temperature: {
+      value: dhtTemp != null ? dhtTemp : (bmpTemp != null ? bmpTemp : '--'),
+      unit: '°C',
+      label: 'Temperature (DHT)',
+      sensor: 'DHT Sensor',
+      status: 'normal',
+    },
+    bmpTemperature: {
+      value: bmpTemp != null ? bmpTemp : '--',
+      unit: '°C',
+      label: 'BMP Temperature',
+      sensor: 'BMP180',
+      status: 'normal',
+    },
+    pressure: {
+      value: pressure != null ? pressure : '--',
+      unit: 'hPa',
+      label: 'Atmospheric Pressure',
+      sensor: 'BMP180',
+      status: 'normal',
+    },
+    humidity: {
+      value: humidity != null ? humidity : '--',
+      unit: '%',
+      label: 'Humidity',
+      sensor: 'Humidity Sensor',
+      status: 'normal',
+    },
+    solarVoltage: {
+      value: estimatedVoltage,
+      unit: 'V',
+      label: 'Solar Voltage',
+      sensor: 'Solar Panels',
+      status: 'normal',
+    },
+    sunlight: {
+      value: sunlightVal,
+      unit: '',
+      label: 'Sunlight Level',
+      sensor: 'LDR Sensors',
+      status: 'normal',
+    },
+    motion: {
+      value: 'Stable',
+      unit: '',
+      label: 'Motion / Gyroscope',
+      sensor: 'MPU6050',
+      status: 'normal',
+    },
+    battery: {
+      value: 85,
+      unit: '%',
+      label: 'Battery',
+      sensor: 'Power Subsystem',
+      status: 'normal',
+    },
+
+    solarTracking: {
+      status: 'ACTIVE',
+      ldrLeft: leftLdr != null ? `${leftLdr} Lux` : '--',
+      ldrRight: rightLdr != null ? `${rightLdr} Lux` : '--',
+      leftLdrRaw: leftLdr,
+      rightLdrRaw: rightLdr,
+      mgAngle: mgAngle != null ? `${mgAngle}°` : '--',
+      sgAngle: sgAngle != null ? `${sgAngle}°` : '--',
+      servoAngle: mgAngle != null ? `${mgAngle}°` : (sgAngle != null ? `${sgAngle}°` : '--'),
+      mode: 'Closed-Loop Auto',
+    },
+
+    raw: {
+      id: row.id,
+      created_at: row.created_at,
+      dht_temp: dhtTemp,
+      humidity,
+      bmp_temp: bmpTemp,
+      pressure,
+      left_ldr: leftLdr,
+      right_ldr: rightLdr,
+      mg_angle: mgAngle,
+      sg_angle: sgAngle,
+      system_status: statusRaw,
+    },
+  };
+}
+
+/**
+ * Transform Supabase history rows for chart display
+ */
+export function transformSupabaseHistory(rows = []) {
+  if (!rows || rows.length === 0) return [];
+
+  return rows.map((r) => {
+    const dhtTemp = r.dht_temp != null ? Number(r.dht_temp) : (r.bmp_temp != null ? Number(r.bmp_temp) : 28);
+    const bmpTemp = r.bmp_temp != null ? Number(r.bmp_temp) : dhtTemp;
+    const humidity = r.humidity != null ? Number(r.humidity) : 55;
+    const pressure = r.pressure != null ? Number(r.pressure) : 1008;
+    const leftLdr = r.left_ldr != null ? Number(r.left_ldr) : 500;
+    const rightLdr = r.right_ldr != null ? Number(r.right_ldr) : 500;
+    const mgAngle = r.mg_angle != null ? Number(r.mg_angle) : 45;
+    const sgAngle = r.sg_angle != null ? Number(r.sg_angle) : 90;
+
+    const timeStr = r.created_at
+      ? new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      : '--:--';
+
+    const solarVoltage = parseFloat(Math.min(6.5, Math.max(3.2, 3.2 + (leftLdr / 1000) * 2.8)).toFixed(2));
+
+    return {
+      time: timeStr,
+      temperature: dhtTemp,
+      bmpTemp: bmpTemp,
+      pressure: pressure,
+      humidity: humidity,
+      solarVoltage: solarVoltage,
+      battery: 82,
+      leftLdr: leftLdr,
+      rightLdr: rightLdr,
+      mgAngle: mgAngle,
+      sgAngle: sgAngle,
+      gyroX: mgAngle - 30,
+      gyroY: sgAngle - 90,
+      gyroZ: (mgAngle + sgAngle) % 360,
+    };
+  });
+}
+

@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import './MissionControl.css';
-import { INITIAL_TELEMETRY, generateInitialChartData } from '../services/telemetryService';
+import { INITIAL_TELEMETRY, generateInitialChartData, transformSupabaseRow, transformSupabaseHistory } from '../services/telemetryService';
+import { fetchLatestTelemetryRow, fetchTelemetryHistoryRows, isSupabaseConfigured } from '../services/supabaseClient';
 import heroImage from '../assets/dmrs01-hero.jpg';
 
 function MissionControl({ onNavigate }) {
-  // Centralized telemetry state from service (easily replaced by WebSocket/fetch)
+  // Centralized telemetry state
   const [telemetry, setTelemetry] = useState(INITIAL_TELEMETRY);
   const [chartData, setChartData] = useState(() => generateInitialChartData(12));
   const [utcTime, setUtcTime] = useState('');
+  const [isLiveTelemetry, setIsLiveTelemetry] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
 
   // Live UTC Clock
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      const iso = now.toISOString(); // e.g. "2026-09-20T11:15:30.123Z"
+      const iso = now.toISOString();
       const formatted = iso.replace('T', ' ').substring(0, 19) + ' UTC';
       setUtcTime(formatted);
     };
@@ -22,52 +25,79 @@ function MissionControl({ onNavigate }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Rolling Live Telemetry Graph Updates (Simulated Live Feed)
+  // Fetch telemetry from Supabase public.telemetry (Auto-refresh every 5 seconds)
   useEffect(() => {
-    const streamInterval = setInterval(() => {
-      const now = new Date();
-      const timeStr = now.toISOString().substring(14, 19);
+    let isMounted = true;
 
-      // Micro fluctuations around baseline
-      const tempDelta = (Math.random() * 0.4 - 0.2).toFixed(1);
-      const voltDelta = (Math.random() * 0.1 - 0.05).toFixed(2);
-      
-      const nextTemp = parseFloat((28.4 + parseFloat(tempDelta)).toFixed(1));
-      const nextVolt = parseFloat((5.8 + parseFloat(voltDelta)).toFixed(2));
+    const syncTelemetry = async () => {
+      try {
+        const { data: latestRow, error: latestErr } = await fetchLatestTelemetryRow();
 
-      setChartData((prev) => {
-        const next = [...prev.slice(1), { time: timeStr, temperature: nextTemp, solarVoltage: nextVolt }];
-        return next;
-      });
+        if (!isMounted) return;
 
-      // Update current telemetry reading
-      setTelemetry((prev) => ({
-        ...prev,
-        temperature: { ...prev.temperature, value: nextTemp },
-        solarVoltage: { ...prev.solarVoltage, value: nextVolt },
-      }));
-    }, 2500);
+        if (latestRow && !latestErr) {
+          const transformed = transformSupabaseRow(latestRow);
+          setTelemetry(transformed);
+          setIsLiveTelemetry(true);
+          setLastSyncTime(new Date().toLocaleTimeString());
 
-    return () => clearInterval(streamInterval);
+          // Fetch historical telemetry rows for graphs if enough rows exist
+          const { data: histRows, error: histErr } = await fetchTelemetryHistoryRows(14);
+          if (isMounted && histRows && histRows.length >= 2 && !histErr) {
+            const transformedHist = transformSupabaseHistory(histRows);
+            setChartData(transformedHist.map(d => ({
+              time: d.time,
+              temperature: d.temperature,
+              solarVoltage: d.solarVoltage,
+              battery: d.battery,
+            })));
+          }
+        } else {
+          // No rows in Supabase or connection pending
+          setIsLiveTelemetry(false);
+        }
+      } catch (err) {
+        console.warn('Mission Control Supabase sync notice:', err);
+        if (isMounted) setIsLiveTelemetry(false);
+      }
+    };
+
+    // Initial fetch
+    syncTelemetry();
+
+    // 5-second automatic refresh ticker (Requirement 8)
+    const refreshInterval = setInterval(syncTelemetry, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(refreshInterval);
+    };
   }, []);
 
-  // Compute SVG Points for Mini Line Graph
-  const minTemp = 27.5;
-  const maxTemp = 29.5;
-  const minVolt = 5.5;
-  const maxVolt = 6.1;
+  // Compute SVG Points for Mini Line Graph safely
   const chartWidth = 520;
   const chartHeight = 110;
 
+  const validTempVals = chartData.map(d => Number(d.temperature)).filter(v => !isNaN(v));
+  const validVoltVals = chartData.map(d => Number(d.solarVoltage)).filter(v => !isNaN(v));
+
+  const minTemp = validTempVals.length ? Math.min(...validTempVals) - 1 : 25;
+  const maxTemp = validTempVals.length ? Math.max(...validTempVals) + 1 : 35;
+  const tempRange = maxTemp - minTemp === 0 ? 1 : maxTemp - minTemp;
+
+  const minVolt = validVoltVals.length ? Math.min(...validVoltVals) - 0.5 : 3.0;
+  const maxVolt = validVoltVals.length ? Math.max(...validVoltVals) + 0.5 : 7.0;
+  const voltRange = maxVolt - minVolt === 0 ? 1 : maxVolt - minVolt;
+
   const tempPoints = chartData.map((d, i) => {
-    const x = (i / (chartData.length - 1)) * chartWidth;
-    const y = chartHeight - ((d.temperature - minTemp) / (maxTemp - minTemp)) * (chartHeight - 16) - 8;
+    const x = chartData.length > 1 ? (i / (chartData.length - 1)) * chartWidth : chartWidth / 2;
+    const y = chartHeight - ((Number(d.temperature) - minTemp) / tempRange) * (chartHeight - 16) - 8;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
 
   const voltPoints = chartData.map((d, i) => {
-    const x = (i / (chartData.length - 1)) * chartWidth;
-    const y = chartHeight - ((d.solarVoltage - minVolt) / (maxVolt - minVolt)) * (chartHeight - 16) - 8;
+    const x = chartData.length > 1 ? (i / (chartData.length - 1)) * chartWidth : chartWidth / 2;
+    const y = chartHeight - ((Number(d.solarVoltage) - minVolt) / voltRange) * (chartHeight - 16) - 8;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
 
@@ -83,15 +113,16 @@ function MissionControl({ onNavigate }) {
               <span className="mc-callsign">DMRS-01</span>
               <h1 className="mc-title">Mission Control</h1>
             </div>
-            <div className="mc-sim-badge">
-              <span className="sim-pulse"></span>
-              <span>SIMULATED TELEMETRY</span>
+            {/* Live / Waiting Telemetry Status Badge (Requirements 9 & 10) */}
+            <div className={`mc-sim-badge ${isLiveTelemetry ? 'live-badge' : 'waiting-badge'}`}>
+              <span className={`sim-pulse ${isLiveTelemetry ? 'live-pulse' : 'waiting-pulse'}`}></span>
+              <span>{isLiveTelemetry ? 'LIVE TELEMETRY' : 'WAITING FOR ESP32 TELEMETRY'}</span>
             </div>
           </div>
 
           <div className="mc-header-right">
             <div className="mc-status-pill">
-              <span className="status-beacon beacon-green"></span>
+              <span className={`status-beacon ${telemetry.systemStatus === 'CRITICAL' ? 'beacon-red' : (telemetry.systemStatus === 'WARNING' ? 'beacon-yellow' : 'beacon-green')}`}></span>
               <span className="status-text">System Status: <strong>{telemetry.systemStatus}</strong></span>
             </div>
             <div className="mc-clock">
@@ -118,7 +149,7 @@ function MissionControl({ onNavigate }) {
           </div>
 
           <div className="mc-metrics-grid">
-            {/* Temperature */}
+            {/* 1. Temperature (dht_temp) */}
             <div className="mc-card">
               <div className="card-top">
                 <span className="card-label">Temperature</span>
@@ -130,11 +161,27 @@ function MissionControl({ onNavigate }) {
               </div>
               <div className="card-status">
                 <span className="mini-dot dot-green"></span>
-                <span className="card-hint">Nominal Thermal Range</span>
+                <span className="card-hint">Ambient Thermal Sensor</span>
               </div>
             </div>
 
-            {/* Atmospheric Pressure */}
+            {/* 2. BMP Temperature (bmp_temp) */}
+            <div className="mc-card">
+              <div className="card-top">
+                <span className="card-label">BMP Temperature</span>
+                <span className="card-chip">{telemetry.bmpTemperature?.sensor || 'BMP180'}</span>
+              </div>
+              <div className="card-value-wrap">
+                <span className="card-val">{telemetry.bmpTemperature?.value ?? '--'}</span>
+                <span className="card-unit">{telemetry.bmpTemperature?.unit || '°C'}</span>
+              </div>
+              <div className="card-status">
+                <span className="mini-dot dot-green"></span>
+                <span className="card-hint">Barometric Thermal Probe</span>
+              </div>
+            </div>
+
+            {/* 3. Atmospheric Pressure (pressure) */}
             <div className="mc-card">
               <div className="card-top">
                 <span className="card-label">Pressure</span>
@@ -150,7 +197,7 @@ function MissionControl({ onNavigate }) {
               </div>
             </div>
 
-            {/* Humidity */}
+            {/* 4. Humidity (humidity) */}
             <div className="mc-card">
               <div className="card-top">
                 <span className="card-label">Humidity</span>
@@ -166,7 +213,7 @@ function MissionControl({ onNavigate }) {
               </div>
             </div>
 
-            {/* Solar Panel Voltage */}
+            {/* 5. Solar Panel Voltage */}
             <div className="mc-card">
               <div className="card-top">
                 <span className="card-label">Solar Voltage</span>
@@ -182,7 +229,7 @@ function MissionControl({ onNavigate }) {
               </div>
             </div>
 
-            {/* Sunlight Level */}
+            {/* 6. Sunlight Level (LDR) */}
             <div className="mc-card">
               <div className="card-top">
                 <span className="card-label">Sunlight Level</span>
@@ -197,22 +244,7 @@ function MissionControl({ onNavigate }) {
               </div>
             </div>
 
-            {/* Gyroscope / Motion */}
-            <div className="mc-card">
-              <div className="card-top">
-                <span className="card-label">Motion / Gyro</span>
-                <span className="card-chip">{telemetry.motion.sensor}</span>
-              </div>
-              <div className="card-value-wrap">
-                <span className="card-val text-cyan">{telemetry.motion.value}</span>
-              </div>
-              <div className="card-status">
-                <span className="mini-dot dot-green"></span>
-                <span className="card-hint">Attitude Stabilized</span>
-              </div>
-            </div>
-
-            {/* Battery */}
+            {/* 7. Battery State */}
             <div className="mc-card">
               <div className="card-top">
                 <span className="card-label">Battery</span>
@@ -228,18 +260,18 @@ function MissionControl({ onNavigate }) {
               </div>
             </div>
 
-            {/* System Status */}
+            {/* 8. System Status (system_status) */}
             <div className="mc-card card-highlight">
               <div className="card-top">
                 <span className="card-label">System Status</span>
                 <span className="card-chip">Main ESP32</span>
               </div>
               <div className="card-value-wrap">
-                <span className="card-val text-green">{telemetry.systemStatus}</span>
+                <span className={`card-val ${telemetry.systemStatus === 'CRITICAL' ? 'text-red' : (telemetry.systemStatus === 'WARNING' ? 'text-yellow' : 'text-green')}`}>{telemetry.systemStatus}</span>
               </div>
               <div className="card-status">
-                <span className="mini-dot dot-green"></span>
-                <span className="card-hint">All Subsystems Nominal</span>
+                <span className={`mini-dot ${telemetry.systemStatus === 'CRITICAL' ? 'dot-red' : (telemetry.systemStatus === 'WARNING' ? 'dot-yellow' : 'dot-green')}`}></span>
+                <span className="card-hint">{isLiveTelemetry ? 'Active Supabase Feed' : 'All Subsystems Nominal'}</span>
               </div>
             </div>
           </div>
@@ -253,7 +285,7 @@ function MissionControl({ onNavigate }) {
           <div className="mc-panel graph-panel">
             <div className="panel-header">
               <div className="panel-title-wrap">
-                <span className="panel-tag">LIVE TELEMETRY STREAM</span>
+                <span className="panel-tag">{isLiveTelemetry ? 'LIVE TELEMETRY STREAM' : 'TELEMETRY STREAM'}</span>
                 <h3 className="panel-title">Temperature &amp; Solar Voltage</h3>
               </div>
               <div className="graph-legend">
@@ -306,25 +338,25 @@ function MissionControl({ onNavigate }) {
 
             <div className="solar-tracking-grid">
               <div className="tracking-metric-box">
-                <span className="track-label">LDR Left</span>
+                <span className="track-label">Left LDR</span>
                 <span className="track-val text-yellow">{telemetry.solarTracking.ldrLeft}</span>
               </div>
               <div className="tracking-metric-box">
-                <span className="track-label">LDR Right</span>
+                <span className="track-label">Right LDR</span>
                 <span className="track-val text-yellow">{telemetry.solarTracking.ldrRight}</span>
               </div>
               <div className="tracking-metric-box">
-                <span className="track-label">Servo Angle</span>
-                <span className="track-val text-cyan">{telemetry.solarTracking.servoAngle}</span>
+                <span className="track-label">MG90S Angle</span>
+                <span className="track-val text-cyan">{telemetry.solarTracking.mgAngle}</span>
               </div>
               <div className="tracking-metric-box">
-                <span className="track-label">Tracking Mode</span>
-                <span className="track-val">{telemetry.solarTracking.mode}</span>
+                <span className="track-label">SG90S Angle</span>
+                <span className="track-val text-cyan">{telemetry.solarTracking.sgAngle}</span>
               </div>
             </div>
 
             <div className="solar-tracking-visual-summary">
-              <div className="track-flow-pill">LDR Array → ESP32 ADC → Servo Motor → Solar Panel</div>
+              <div className="track-flow-pill">LDR Array → ESP32 ADC → MG90S / SG90S Servos → Solar Panel</div>
             </div>
           </div>
 

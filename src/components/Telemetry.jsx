@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { INITIAL_TELEMETRY, generateMultiTelemetryHistory, getNextTelemetrySample } from '../services/telemetryService';
+import { INITIAL_TELEMETRY, generateMultiTelemetryHistory, getNextTelemetrySample, transformSupabaseRow, transformSupabaseHistory } from '../services/telemetryService';
+import { fetchLatestTelemetryRow, fetchTelemetryHistoryRows, isSupabaseConfigured } from '../services/supabaseClient';
 import { fetchCurrentWeather } from '../services/weatherService';
 import './Telemetry.css';
 
@@ -10,9 +11,11 @@ function SingleMetricChart({ title, sensor, unit, data, dataKey, strokeColor, gr
   if (!data || data.length === 0) return null;
 
   const currentVal = data[data.length - 1][dataKey];
-  const values = data.map(d => d[dataKey]);
-  const minVal = minY !== undefined ? minY : Math.min(...values);
-  const maxVal = maxY !== undefined ? maxY : Math.max(...values);
+  const numValues = data.map(d => Number(d[dataKey])).filter(v => !isNaN(v));
+  const dataMin = numValues.length ? Math.min(...numValues) : (minY ?? 0);
+  const dataMax = numValues.length ? Math.max(...numValues) : (maxY ?? 100);
+  const minVal = minY !== undefined ? Math.min(minY, dataMin) : dataMin;
+  const maxVal = maxY !== undefined ? Math.max(maxY, dataMax) : dataMax;
   const range = maxVal - minVal === 0 ? 1 : maxVal - minVal;
 
   const width = 480;
@@ -211,7 +214,7 @@ function GyroscopeMultiChart({ data }) {
 export default function Telemetry({ onNavigate }) {
   const [telemetry, setTelemetry] = useState(INITIAL_TELEMETRY);
   const [chartData, setChartData] = useState(() => generateMultiTelemetryHistory(16));
-  const [isStreaming, setIsStreaming] = useState(true);
+  const [isLiveTelemetry, setIsLiveTelemetry] = useState(false);
   const [lastUpdatedTime, setLastUpdatedTime] = useState(() => new Date().toISOString().substring(11, 19) + ' UTC');
   const stepCountRef = useRef(16);
 
@@ -243,9 +246,56 @@ export default function Telemetry({ onNavigate }) {
     return () => clearInterval(weatherInterval);
   }, []);
 
-  // Live simulation ticker
+  // Live Telemetry Sync from Supabase public.telemetry (Auto-refreshes every 5 seconds - Requirement 8)
   useEffect(() => {
-    if (!isStreaming) return;
+    let isMounted = true;
+
+    const syncTelemetry = async () => {
+      try {
+        const { data: latestRow, error: latestErr } = await fetchLatestTelemetryRow();
+
+        if (!isMounted) return;
+
+        if (latestRow && !latestErr) {
+          const transformed = transformSupabaseRow(latestRow);
+          setTelemetry(transformed);
+          setIsLiveTelemetry(true);
+          const timeFormatted = latestRow.created_at
+            ? new Date(latestRow.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' UTC'
+            : new Date().toISOString().substring(11, 19) + ' UTC';
+          setLastUpdatedTime(timeFormatted);
+
+          // Fetch historical rows for the 6 graphs (Requirement 12)
+          const { data: histRows, error: histErr } = await fetchTelemetryHistoryRows(16);
+          if (isMounted && histRows && histRows.length >= 2 && !histErr) {
+            const transformedHist = transformSupabaseHistory(histRows);
+            setChartData(transformedHist);
+          }
+        } else {
+          // No row in Supabase or connection awaiting data
+          setIsLiveTelemetry(false);
+        }
+      } catch (err) {
+        console.warn('Telemetry page Supabase sync notice:', err);
+        if (isMounted) setIsLiveTelemetry(false);
+      }
+    };
+
+    // Initial fetch
+    syncTelemetry();
+
+    // 5-second automatic refresh interval (Requirement 8)
+    const interval = setInterval(syncTelemetry, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Fallback simulation: ONLY active if Supabase is unconfigured (Requirement 11)
+  useEffect(() => {
+    if (isSupabaseConfigured() || isLiveTelemetry) return;
 
     const interval = setInterval(() => {
       stepCountRef.current += 1;
@@ -253,7 +303,6 @@ export default function Telemetry({ onNavigate }) {
       const currentTime = new Date().toISOString().substring(11, 19) + ' UTC';
       setLastUpdatedTime(currentTime);
 
-      // Update central telemetry state
       setTelemetry(prev => ({
         ...prev,
         lastUpdated: new Date().toISOString(),
@@ -271,15 +320,11 @@ export default function Telemetry({ onNavigate }) {
         },
       }));
 
-      // Append to rolling chart buffer (keep last 16 points)
-      setChartData(prev => {
-        const next = [...prev.slice(1), sample];
-        return next;
-      });
+      setChartData(prev => [...prev.slice(1), sample]);
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [isStreaming]);
+  }, [isLiveTelemetry]);
 
   return (
     <div className="telemetry-page">
@@ -298,41 +343,41 @@ export default function Telemetry({ onNavigate }) {
             <div className="title-group">
               <h1 className="telemetry-main-title">Telemetry System</h1>
               <p className="telemetry-subtitle">
-                Continuous Autonomous Sensor & Attitude Acquisition Subsystem
+                Continuous Autonomous Sensor &amp; Attitude Acquisition Subsystem
               </p>
             </div>
           </div>
 
           <div className="header-right">
-            {/* Prominent SIMULATED TELEMETRY Badge */}
+            {/* Live / Waiting Telemetry Status Badge (Requirements 9 & 10) */}
             <div className="simulated-badge-container">
-              <div className="simulated-pill">
-                <span className="simulated-dot"></span>
-                <span className="simulated-text">SIMULATED TELEMETRY</span>
+              <div className={`simulated-pill ${isLiveTelemetry ? 'live-pill' : 'waiting-pill'}`}>
+                <span className={`simulated-dot ${isLiveTelemetry ? 'live-dot' : 'waiting-dot'}`}></span>
+                <span className="simulated-text">
+                  {isLiveTelemetry ? 'LIVE TELEMETRY' : 'WAITING FOR ESP32 TELEMETRY'}
+                </span>
               </div>
-              <span className="simulated-caption">Physical CubeSat in pre-assembly phase</span>
+              <span className="simulated-caption">
+                {isLiveTelemetry ? 'Real-time Supabase telemetry feed from CubeSat' : 'Awaiting real ESP32 telemetry packets'}
+              </span>
             </div>
 
             {/* System Status & Time */}
             <div className="header-stats">
               <div className="stat-pill">
                 <span className="pill-label">STATUS</span>
-                <span className="pill-val status-normal">
-                  <span className="green-dot"></span> NORMAL
+                <span className={`pill-val ${telemetry.systemStatus === 'CRITICAL' ? 'status-critical text-red' : (telemetry.systemStatus === 'WARNING' ? 'status-warning text-yellow' : 'status-normal text-green')}`}>
+                  <span className={`status-dot ${telemetry.systemStatus === 'CRITICAL' ? 'dot-red' : (telemetry.systemStatus === 'WARNING' ? 'dot-yellow' : 'green-dot')}`}></span> {telemetry.systemStatus}
                 </span>
               </div>
               <div className="stat-pill">
                 <span className="pill-label">LAST UPDATE</span>
                 <span className="pill-val mono-val">{lastUpdatedTime}</span>
               </div>
-              <button
-                className={`stream-toggle-btn ${isStreaming ? 'streaming' : 'paused'}`}
-                onClick={() => setIsStreaming(!isStreaming)}
-                title="Toggle live telemetry simulation streaming"
-              >
-                <span className="toggle-indicator"></span>
-                {isStreaming ? 'LIVE (2.5s)' : 'PAUSED'}
-              </button>
+              <div className="stat-pill stream-sync-pill" title="5-second Supabase telemetry synchronization">
+                <span className="pill-label">REFRESH</span>
+                <span className="pill-val mono-val text-cyan">5s AUTO</span>
+              </div>
             </div>
           </div>
         </header>
@@ -368,152 +413,146 @@ export default function Telemetry({ onNavigate }) {
           </div>
 
           <div className="telemetry-cards-grid">
-            {/* 1. Temperature */}
+            {/* 1. Temperature (dht_temp) */}
             <div className="telemetry-card">
               <div className="card-top">
                 <span className="card-label">Temperature</span>
-                <span className="card-sensor-tag">BMP180</span>
+                <span className="card-sensor-tag">{telemetry.temperature.sensor}</span>
               </div>
               <div className="card-metric">
                 <span className="metric-value">{telemetry.temperature.value}</span>
-                <span className="metric-unit">°C</span>
+                <span className="metric-unit">{telemetry.temperature.unit}</span>
               </div>
               <div className="card-footer">
-                <span className="nominal-badge">NOMINAL (20–35°C)</span>
-                <span className="status-chip normal">Normal</span>
+                <span className="nominal-badge">DHT SENSOR</span>
+                <span className="status-chip normal">Active</span>
               </div>
             </div>
 
-            {/* 2. Atmospheric Pressure */}
+            {/* 2. BMP Temperature (bmp_temp) */}
+            <div className="telemetry-card">
+              <div className="card-top">
+                <span className="card-label">BMP Temperature</span>
+                <span className="card-sensor-tag">{telemetry.bmpTemperature?.sensor || 'BMP180'}</span>
+              </div>
+              <div className="card-metric">
+                <span className="metric-value">{telemetry.bmpTemperature?.value ?? '--'}</span>
+                <span className="metric-unit">{telemetry.bmpTemperature?.unit || '°C'}</span>
+              </div>
+              <div className="card-footer">
+                <span className="nominal-badge">BMP180 THERMAL</span>
+                <span className="status-chip normal">Active</span>
+              </div>
+            </div>
+
+            {/* 3. Atmospheric Pressure (pressure) */}
             <div className="telemetry-card">
               <div className="card-top">
                 <span className="card-label">Atmospheric Pressure</span>
-                <span className="card-sensor-tag">BMP180</span>
+                <span className="card-sensor-tag">{telemetry.pressure.sensor}</span>
               </div>
               <div className="card-metric">
                 <span className="metric-value">{telemetry.pressure.value}</span>
-                <span className="metric-unit">hPa</span>
+                <span className="metric-unit">{telemetry.pressure.unit}</span>
               </div>
               <div className="card-footer">
                 <span className="nominal-badge">SEA-LEVEL BASELINE</span>
-                <span className="status-chip normal">Normal</span>
+                <span className="status-chip normal">Active</span>
               </div>
             </div>
 
-            {/* 3. Humidity */}
+            {/* 4. Humidity (humidity) */}
             <div className="telemetry-card">
               <div className="card-top">
                 <span className="card-label">Humidity</span>
-                <span className="card-sensor-tag">Humidity Sensor</span>
+                <span className="card-sensor-tag">{telemetry.humidity.sensor}</span>
               </div>
               <div className="card-metric">
                 <span className="metric-value">{telemetry.humidity.value}</span>
-                <span className="metric-unit">%</span>
+                <span className="metric-unit">{telemetry.humidity.unit}</span>
               </div>
               <div className="card-footer">
-                <span className="nominal-badge">AMBIENT (40–70%)</span>
-                <span className="status-chip normal">Normal</span>
+                <span className="nominal-badge">RELATIVE MOISTURE</span>
+                <span className="status-chip normal">Active</span>
               </div>
             </div>
 
-            {/* 4. Solar Voltage (Yellow Accent) */}
+            {/* 5. Left LDR (left_ldr) */}
             <div className="telemetry-card card-yellow-accent">
               <div className="card-top">
-                <span className="card-label text-yellow">Solar Voltage</span>
-                <span className="card-sensor-tag sensor-yellow">Solar Panels</span>
+                <span className="card-label text-yellow">Left LDR</span>
+                <span className="card-sensor-tag sensor-yellow">LDR Sensor</span>
               </div>
               <div className="card-metric metric-yellow">
-                <span className="metric-value">{telemetry.solarVoltage.value}</span>
-                <span className="metric-unit">V</span>
+                <span className="metric-value-text">{telemetry.solarTracking.ldrLeft}</span>
               </div>
               <div className="card-footer">
-                <span className="nominal-badge">DUAL-PANEL BUS</span>
-                <span className="status-chip chip-yellow">Active</span>
+                <span className="nominal-badge">PORT SOLAR FLUX</span>
+                <span className="status-chip chip-yellow">Solar Tracking</span>
               </div>
             </div>
 
-            {/* 5. Battery (Green / Normal) */}
-            <div className="telemetry-card">
-              <div className="card-top">
-                <span className="card-label">Battery Level</span>
-                <span className="card-sensor-tag">EPS Subsystem</span>
-              </div>
-              <div className="card-metric">
-                <span className="metric-value">{telemetry.battery.value}</span>
-                <span className="metric-unit">%</span>
-              </div>
-              <div className="card-footer">
-                <span className="nominal-badge">3.7V LiPo 1S2P</span>
-                <span className="status-chip normal">Normal</span>
-              </div>
-            </div>
-
-            {/* 6. Sunlight (Yellow Accent) */}
+            {/* 6. Right LDR (right_ldr) */}
             <div className="telemetry-card card-yellow-accent">
               <div className="card-top">
-                <span className="card-label text-yellow">Sunlight Level</span>
-                <span className="card-sensor-tag sensor-yellow">LDR Sensors</span>
+                <span className="card-label text-yellow">Right LDR</span>
+                <span className="card-sensor-tag sensor-yellow">LDR Sensor</span>
               </div>
               <div className="card-metric metric-yellow">
-                <span className="metric-value-text">{telemetry.sunlight.value}</span>
+                <span className="metric-value-text">{telemetry.solarTracking.ldrRight}</span>
               </div>
               <div className="card-footer">
-                <span className="nominal-badge">SERVO TRACKING</span>
-                <span className="status-chip chip-yellow">High Lux</span>
+                <span className="nominal-badge">STARBOARD FLUX</span>
+                <span className="status-chip chip-yellow">Solar Tracking</span>
               </div>
             </div>
 
-            {/* 7. Gyroscope X */}
+            {/* 7. MG90S Angle (mg_angle) */}
             <div className="telemetry-card">
               <div className="card-top">
-                <span className="card-label">Gyroscope X (Roll)</span>
-                <span className="card-sensor-tag">MPU6050</span>
+                <span className="card-label">MG90S Angle</span>
+                <span className="card-sensor-tag">Servo Motor</span>
               </div>
               <div className="card-metric">
-                <span className="metric-value">
-                  {telemetry.gyroscope.roll > 0 ? `+${telemetry.gyroscope.roll}` : telemetry.gyroscope.roll}
-                </span>
-                <span className="metric-unit">°</span>
+                <span className="metric-value text-cyan">{telemetry.solarTracking.mgAngle}</span>
               </div>
               <div className="card-footer">
-                <span className="nominal-badge">ROLL ATTITUDE</span>
-                <span className="status-chip normal">Normal</span>
+                <span className="nominal-badge">PRIMARY GIMBAL</span>
+                <span className="status-chip normal">Actuator</span>
               </div>
             </div>
 
-            {/* 8. Gyroscope Y */}
+            {/* 8. SG90S Angle (sg_angle) */}
             <div className="telemetry-card">
               <div className="card-top">
-                <span className="card-label">Gyroscope Y (Pitch)</span>
-                <span className="card-sensor-tag">MPU6050</span>
+                <span className="card-label">SG90S Angle</span>
+                <span className="card-sensor-tag">Servo Motor</span>
               </div>
               <div className="card-metric">
-                <span className="metric-value">
-                  {telemetry.gyroscope.pitch > 0 ? `+${telemetry.gyroscope.pitch}` : telemetry.gyroscope.pitch}
-                </span>
-                <span className="metric-unit">°</span>
+                <span className="metric-value text-cyan">{telemetry.solarTracking.sgAngle}</span>
               </div>
               <div className="card-footer">
-                <span className="nominal-badge">PITCH ATTITUDE</span>
-                <span className="status-chip normal">Normal</span>
+                <span className="nominal-badge">SECONDARY GIMBAL</span>
+                <span className="status-chip normal">Actuator</span>
               </div>
             </div>
 
-            {/* 9. Gyroscope Z */}
+            {/* 9. System Status (system_status) */}
             <div className="telemetry-card">
               <div className="card-top">
-                <span className="card-label">Gyroscope Z (Yaw)</span>
-                <span className="card-sensor-tag">MPU6050</span>
+                <span className="card-label">System Status</span>
+                <span className="card-sensor-tag">Main ESP32</span>
               </div>
               <div className="card-metric">
-                <span className="metric-value">
-                  {telemetry.gyroscope.yaw > 0 ? `+${telemetry.gyroscope.yaw}` : telemetry.gyroscope.yaw}
+                <span className={`metric-value-text ${telemetry.systemStatus === 'CRITICAL' ? 'text-red' : (telemetry.systemStatus === 'WARNING' ? 'text-yellow' : 'text-green')}`}>
+                  {telemetry.systemStatus}
                 </span>
-                <span className="metric-unit">°</span>
               </div>
               <div className="card-footer">
-                <span className="nominal-badge">YAW ATTITUDE</span>
-                <span className="status-chip normal">Normal</span>
+                <span className="nominal-badge">{isLiveTelemetry ? 'LIVE SUPABASE' : 'STANDBY'}</span>
+                <span className={`status-chip ${telemetry.systemStatus === 'CRITICAL' ? 'chip-red' : (telemetry.systemStatus === 'WARNING' ? 'chip-yellow' : 'normal')}`}>
+                  {telemetry.systemStatus}
+                </span>
               </div>
             </div>
           </div>

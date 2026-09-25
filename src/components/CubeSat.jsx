@@ -17,7 +17,6 @@ function CubeSat({ onNavigate }) {
 
   // Viewport Control States
   const [autoRotate, setAutoRotate] = useState(false);
-  const [syncWithGyro, setSyncWithGyro] = useState(true);
   const [zoom, setZoom] = useState(1);
 
   // References for Three.js Canvas and Scene
@@ -27,6 +26,12 @@ function CubeSat({ onNavigate }) {
   const cubeSatGroupRef = useRef(null);
   const cameraRef = useRef(null);
   const animFrameId = useRef(null);
+
+  // Base Orientation Refs (Euler angles in radians)
+  const baseAngleX = useRef(THREE.MathUtils.degToRad(12.5));
+  const baseAngleY = useRef(THREE.MathUtils.degToRad(-8.3));
+  const baseAngleZ = useRef(THREE.MathUtils.degToRad(45.6));
+  const autoRotateRef = useRef(false);
 
   // Drag interaction refs
   const isDragging = useRef(false);
@@ -260,24 +265,37 @@ function CubeSat({ onNavigate }) {
     // Add satellite to main scene
     scene.add(satelliteGroup);
 
-    // Apply initial Euler orientation from initial gyro values
-    satelliteGroup.rotation.x = THREE.MathUtils.degToRad(12.5);
-    satelliteGroup.rotation.y = THREE.MathUtils.degToRad(-8.3);
-    satelliteGroup.rotation.z = THREE.MathUtils.degToRad(45.6);
+    // Apply initial Euler orientation
+    satelliteGroup.rotation.x = baseAngleX.current;
+    satelliteGroup.rotation.y = baseAngleY.current;
+    satelliteGroup.rotation.z = baseAngleZ.current;
 
     // -------------------------------------------------------------------------
-    // Render Loop
+    // Render Loop (Slow, smooth automatic LEFT ↔ RIGHT rotation)
     // -------------------------------------------------------------------------
-    const animate = () => {
+    const animate = (time) => {
       animFrameId.current = requestAnimationFrame(animate);
 
-      if (autoRotate && !isDragging.current && !syncWithGyro) {
-        satelliteGroup.rotation.y += 0.01;
+      const timeSec = (time || performance.now()) * 0.001;
+
+      if (cubeSatGroupRef.current) {
+        if (autoRotateRef.current && !isDragging.current) {
+          // If autoRotate button is explicitly enabled, continuous 360° spin
+          baseAngleY.current += 0.008;
+          cubeSatGroupRef.current.rotation.y = baseAngleY.current;
+        } else if (!isDragging.current) {
+          // Slow, subtle, professional automatic LEFT ↔ RIGHT oscillation
+          // Uses pure sine harmonic motion for natural ease-in-out (no jerking at limits)
+          // Speed: 0.65 rad/s (~9.6s period for full left-right-left sweep)
+          // Amplitude: 18° (~0.314 radians)
+          const oscillation = Math.sin(timeSec * 0.65) * 0.314;
+          cubeSatGroupRef.current.rotation.y = baseAngleY.current + oscillation;
+        }
       }
 
       renderer.render(scene, camera);
     };
-    animate();
+    animFrameId.current = requestAnimationFrame(animate);
 
     // Resize Handler
     const handleResize = () => {
@@ -300,18 +318,6 @@ function CubeSat({ onNavigate }) {
     };
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // 2. Synchronize Gyroscope (MPU6050) Values Directly with 3D CubeSat
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    if (cubeSatGroupRef.current && syncWithGyro) {
-      // X = Roll, Y = Pitch, Z = Yaw
-      cubeSatGroupRef.current.rotation.x = THREE.MathUtils.degToRad(gyro.roll);
-      cubeSatGroupRef.current.rotation.y = THREE.MathUtils.degToRad(gyro.pitch);
-      cubeSatGroupRef.current.rotation.z = THREE.MathUtils.degToRad(gyro.yaw);
-    }
-  }, [gyro, syncWithGyro]);
-
   // Handle Zoom State change
   useEffect(() => {
     if (cameraRef.current) {
@@ -320,7 +326,7 @@ function CubeSat({ onNavigate }) {
   }, [zoom]);
 
   // ---------------------------------------------------------------------------
-  // 3. Pointer & Mouse Drag Interaction (Orbital rotation)
+  // 2. Pointer & Mouse Drag Interaction (Orbital rotation)
   // ---------------------------------------------------------------------------
   const handlePointerDown = (e) => {
     isDragging.current = true;
@@ -335,23 +341,23 @@ function CubeSat({ onNavigate }) {
     previousMousePosition.current = { x: e.clientX, y: e.clientY };
 
     // Rotate CubeSat based on drag delta
-    cubeSatGroupRef.current.rotation.y += deltaX * 0.008;
-    cubeSatGroupRef.current.rotation.x += deltaY * 0.008;
+    baseAngleY.current += deltaX * 0.008;
+    baseAngleX.current += deltaY * 0.008;
 
-    // Synchronize gyro readouts with current CubeSat rotation
-    const curX = THREE.MathUtils.radToDeg(cubeSatGroupRef.current.rotation.x);
-    const curY = THREE.MathUtils.radToDeg(cubeSatGroupRef.current.rotation.y);
-    const curZ = THREE.MathUtils.radToDeg(cubeSatGroupRef.current.rotation.z);
-
-    setGyro({
-      roll: parseFloat((curX % 360).toFixed(1)),
-      pitch: parseFloat((curY % 360).toFixed(1)),
-      yaw: parseFloat((curZ % 360).toFixed(1)),
-    });
+    cubeSatGroupRef.current.rotation.y = baseAngleY.current;
+    cubeSatGroupRef.current.rotation.x = baseAngleX.current;
   };
 
   const handlePointerUp = () => {
-    isDragging.current = false;
+    if (isDragging.current && cubeSatGroupRef.current) {
+      isDragging.current = false;
+      // Seamlessly sync baseAngleY with current time oscillation phase so resuming has zero jump
+      const timeSec = performance.now() * 0.001;
+      const currentOscillation = Math.sin(timeSec * 0.65) * 0.314;
+      baseAngleY.current = cubeSatGroupRef.current.rotation.y - currentOscillation;
+    } else {
+      isDragging.current = false;
+    }
   };
 
   const handleWheel = (e) => {
@@ -365,24 +371,42 @@ function CubeSat({ onNavigate }) {
     setGyro({ roll: 12.5, pitch: -8.3, yaw: 45.6 });
     setZoom(1);
     setAutoRotate(false);
-    setSyncWithGyro(true);
+    autoRotateRef.current = false;
+
+    baseAngleX.current = THREE.MathUtils.degToRad(12.5);
+    baseAngleY.current = THREE.MathUtils.degToRad(-8.3);
+    baseAngleZ.current = THREE.MathUtils.degToRad(45.6);
 
     if (cubeSatGroupRef.current) {
-      cubeSatGroupRef.current.rotation.x = THREE.MathUtils.degToRad(12.5);
-      cubeSatGroupRef.current.rotation.y = THREE.MathUtils.degToRad(-8.3);
-      cubeSatGroupRef.current.rotation.z = THREE.MathUtils.degToRad(45.6);
+      cubeSatGroupRef.current.rotation.x = baseAngleX.current;
+      cubeSatGroupRef.current.rotation.y = baseAngleY.current;
+      cubeSatGroupRef.current.rotation.z = baseAngleZ.current;
     }
   };
 
   // Gyro Slider Updates (Testing simulated MPU6050 angle changes)
   const handleGyroChange = (axis, value) => {
     const val = parseFloat(value);
-    setSyncWithGyro(true);
     setAutoRotate(false);
+    autoRotateRef.current = false;
     setGyro((prev) => ({
       ...prev,
       [axis]: val,
     }));
+
+    if (axis === 'roll') {
+      baseAngleX.current = THREE.MathUtils.degToRad(val);
+      if (cubeSatGroupRef.current) cubeSatGroupRef.current.rotation.x = baseAngleX.current;
+    }
+    if (axis === 'pitch') {
+      const timeSec = performance.now() * 0.001;
+      const currentOscillation = Math.sin(timeSec * 0.65) * 0.314;
+      baseAngleY.current = THREE.MathUtils.degToRad(val) - currentOscillation;
+    }
+    if (axis === 'yaw') {
+      baseAngleZ.current = THREE.MathUtils.degToRad(val);
+      if (cubeSatGroupRef.current) cubeSatGroupRef.current.rotation.z = baseAngleZ.current;
+    }
   };
 
   return (
@@ -448,8 +472,9 @@ function CubeSat({ onNavigate }) {
                 <button
                   className={`toolbar-btn ${autoRotate ? 'btn-active' : ''}`}
                   onClick={() => {
-                    setAutoRotate(!autoRotate);
-                    if (!autoRotate) setSyncWithGyro(false);
+                    const nextVal = !autoRotate;
+                    setAutoRotate(nextVal);
+                    autoRotateRef.current = nextVal;
                   }}
                 >
                   Auto Rotate: {autoRotate ? 'ON' : 'OFF'}
